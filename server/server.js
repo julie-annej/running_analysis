@@ -16,6 +16,11 @@ const QueryRoot = new GraphQLObjectType({
     }
 });
 
+// const stravaConnectQuery = new GraphQLObjectType({
+//     name: 'Strava',
+
+// });
+
 const schema = new GraphQLSchema({ query: QueryRoot });
 
 app.use('/api', graphqlHTTP({
