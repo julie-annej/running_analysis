@@ -22,6 +22,27 @@ export async function createUser(user) {
         console.log("User created successfully");
         return result;
     } catch(error) {
-        console.log("Error creating user: ");
+        console.log("Error creating user: ", error);
+    }
+}
+
+export async function updateAuth(authInfo) {
+    try {
+        const authCollection = db.collection("authUsers");
+        const result = await authCollection.insertOne(authInfo);
+        console.log("Auth updated");
+        return result;
+    } catch(error) {
+        console.log("Error with updating auth: ", error);
+    }
+}
+
+export async function getAuth(userId) {
+    try {
+        const authCollection = db.collection("authUsers");
+        const findResult = await authCollection.findOne({athlete_id: userId});
+        return findResult;
+    } catch(error) {
+        console.log("Error with updating auth: ", error);
     }
 }

@@ -2,18 +2,16 @@ import  express  from "express";
 // import { GraphQLObjectType, GraphQLSchema, GraphQLString } from "graphql";
 // import { graphqlHTTP } from "express-graphql";
 // import { request, gql } from 'graphql-request';
-import axios from "axios";
-import { config } from "dotenv";
+// import axios from "axios";
+// import { config } from "dotenv";
 import cors from "cors";
-import { createUser } from "./database/database.js";
+import { createUser, getAuth, updateAuth } from "./database/database.js";
+import { codeExchangeStrava } from "./auth/authentication.js";
 
 const app = express();
 app.use(cors());
 const port = 4200;
-const configurations = config().parsed;
-console.log(configurations);
-const APP_ID = configurations.APP_ID;
-const APP_SECRET = configurations.APP_SECRET;
+
 
 // const QueryRoot = new GraphQLObjectType({
 //     name: 'Query',
@@ -27,14 +25,7 @@ const APP_SECRET = configurations.APP_SECRET;
 //     }
 // });
 
-const tokenExchangeStrava = async (code) => {
-  const buildStravaTokenExchangeURL = (code) => {
-    return `https://www.strava.com/api/v3/oauth/token?client_id=${APP_ID}&client_secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`
-  }
-  const url = buildStravaTokenExchangeURL(code);
-  const res = await axios.post(url);
-  return res; 
-}
+
 // TODO: let client fetch user info with GRAPHQL
 // const schema = new GraphQLSchema({ query: QueryRoot });
 
@@ -46,18 +37,29 @@ const tokenExchangeStrava = async (code) => {
 
 app.post('/connect', async (req, res) => {
   console.log('Received request');
-  const result = await tokenExchangeStrava(req.query.code); 
-  if (result.status === 200) {
-    const user = result.data;
-    createUser(user); // TODO: save user info in mongodb
+  const result = await codeExchangeStrava(req.query.code); 
+  if (result.status !== 200) {
+    res.status(400).json({message:'Error connecting user'});
+  }
+    const account = result.data;
+    createUser(account.athlete);
+    const authInfo = {
+      access_token: account.access_token,
+      refresh_token: account.refresh_token,
+      expires_at: account.expires_at,
+      athlete_id: account.athlete.id
+    }
+    await updateAuth(authInfo)
+    
     res.status(200).send({message:'User connected'});
     return;
-  } 
-  res.status(400).json({message:'Error connecting user'});
-});
-
-app.get('/', (req, res) => {
-  console.log('test');
+  });
+  
+  app.get('/', async (req, res) => {
+    console.log('test');
+    const info = await getAuth(74899019);
+    console.log(info);
+    res.status(200).send(info);
 });
 
 app.listen(port, () => {
