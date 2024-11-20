@@ -21,6 +21,7 @@
   "homepage": "https://github.com/julie-annej/running_analysis#readme",
   "dependencies": {
     "axios": "^1.7.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-graphql": "^0.12.0",
