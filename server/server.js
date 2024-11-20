@@ -3,17 +3,17 @@ import  express  from "express";
 // import { graphqlHTTP } from "express-graphql";
 // import { request, gql } from 'graphql-request';
 import axios from "axios";
-import dotenv from "dotenv";
+import { config } from "dotenv";
 import cors from "cors";
-import { connect } from "./database/database.js";
+import { createUser } from "./database/database.js";
 
 const app = express();
 app.use(cors());
 const port = 4200;
-const config = dotenv.config().parsed;
-console.log(config);
-const APP_ID = config.APP_ID;
-const APP_SECRET = config.APP_SECRET;
+const configurations = config().parsed;
+console.log(configurations);
+const APP_ID = configurations.APP_ID;
+const APP_SECRET = configurations.APP_SECRET;
 
 // const QueryRoot = new GraphQLObjectType({
 //     name: 'Query',
@@ -33,11 +33,9 @@ const tokenExchangeStrava = async (code) => {
   }
   const url = buildStravaTokenExchangeURL(code);
   const res = await axios.post(url);
-  console.log(res);
-  console.log(res.status);
-  return res; // TODO: save user info in mongodb
+  return res; 
 }
-
+// TODO: let client fetch user info with GRAPHQL
 // const schema = new GraphQLSchema({ query: QueryRoot });
 
 // app.use('/graphql', graphqlHTTP(request => ({
@@ -46,20 +44,20 @@ const tokenExchangeStrava = async (code) => {
 //   // context: { authUser: request.user }
 // })));
 
-app.post('/connect', (req, res) => {
+app.post('/connect', async (req, res) => {
   console.log('Received request');
-  const user = tokenExchangeStrava(req.query.code); // TODO: let client fetch user info with GRAPHQL
-  const data = {
-    user: user,
-  }
-  res.json(data)
+  const result = await tokenExchangeStrava(req.query.code); 
+  if (result.status === 200) {
+    const user = result.data;
+    createUser(user); // TODO: save user info in mongodb
+    res.status(200).send({message:'User connected'});
+    return;
+  } 
+  res.status(400).json({message:'Error connecting user'});
 });
 
 app.get('/', (req, res) => {
   console.log('test');
-
-  connect();
-
 });
 
 app.listen(port, () => {

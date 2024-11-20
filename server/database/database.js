@@ -1,17 +1,27 @@
 import { MongoClient } from "mongodb";
+import { config } from "dotenv";
 
-async function connect() {
-    const connectionString = process.env.MONGO_URL || "";
-    const client = new MongoClient(connectionString);
-    let connection;
-    try {
-        connection = await client.connect();
-        console.log("Connected to MongoDB");
-    } catch(error) {
-        console.log("Error connecting to MongoDB: ", error);
-    }
-    let db = connection.db("running_app");
-    return db;
+let db;
+const connectionString = config().parsed.MONGO_URL;
+console.log(connectionString);
+const client = new MongoClient(connectionString);
+try {
+    await client.connect();
+    db = client.db("running");
+    console.log("Connected to MongoDB");
+} catch(error) {
+    console.log("Error connecting to MongoDB: ", error);
 }
 
-module.exports = connect();
+export default db;
+
+export async function createUser(user) {
+    try {
+        const userCollection = db.collection("users");
+        const result = await userCollection.insertOne(user);
+        console.log("User created successfully");
+        return result;
+    } catch(error) {
+        console.log("Error creating user: ");
+    }
+}
